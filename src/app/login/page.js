@@ -13,13 +13,25 @@ export default function LoginPage() {
   const [resetMsg, setResetMsg] = useState('')
 
   const handleLogin = async () => {
-    setError(''); setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    setLoading(false)
-    if (error) { setError('メールアドレスまたはパスワードが間違っています'); return }
-    router.replace('/cases')
-  }
+  setError(''); setLoading(true)
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  setLoading(false)
+  if (error) { setError('メールアドレスまたはパスワードが間違っています'); return }
+  // ↓ router.replace を削除。AuthGuardのSIGNED_INイベント検知に任せる
+  // （セッション確立 → onAuthStateChange発火 → fetchProfile → 自動的に/casesへ）
+}
 
+// ログイン成功を検知して /cases へ移動する
+useEffect(() => {
+  const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_IN') {
+      router.replace('/cases')
+    }
+  })
+  return () => listener.subscription.unsubscribe()
+}, [router])
+
+  
   const handleReset = async () => {
     if (!email) { setError('メールアドレスを入力してください'); return }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
