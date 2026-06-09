@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl  = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'placeholder'
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder'
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('.env.local に SUPABASE_URL と SUPABASE_ANON_KEY を設定してください')
-}
+// ↑ throw new Error(...) を削除し、|| 'placeholder' に変更
+// 理由：Vercelのビルド時にサーバー側でこのファイルが読み込まれる際、
+//       環境変数が一瞬未設定になりビルドが止まってしまうため
 
 export const supabase = createClient(supabaseUrl, supabaseKey)
 
@@ -33,11 +33,11 @@ export function toWareki(val) {
   if (!val) return ''
   const d = new Date(val)
   if (isNaN(d.getTime())) return val
-  const y = d.getFullYear(), m = d.getMonth()+1, day = d.getDate()
+  const y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate()
   let era, yr
-  if (y >= 2019) { era = '令和'; yr = y - 2018 }
+  if (y >= 2019)      { era = '令和'; yr = y - 2018 }
   else if (y >= 1989) { era = '平成'; yr = y - 1988 }
   else if (y >= 1926) { era = '昭和'; yr = y - 1925 }
-  else { era = '大正'; yr = y - 1911 }
+  else                { era = '大正'; yr = y - 1911 }
   return `${era}${yr === 1 ? '元' : yr}年${m}月${day}日`
 }
