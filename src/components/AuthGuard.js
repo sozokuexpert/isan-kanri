@@ -9,33 +9,37 @@ export default function AuthGuard({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // onAuthStateChange だけに一本化する
-    // （initializeとの競合を完全になくす）
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // ↓デバッグ用：どのイベントが来ているか確認する
+        console.log('★ AuthGuard event:', event, 'session:', session?.user?.id)
 
         if (event === 'SIGNED_OUT' || !session) {
+          console.log('★ ログインなし → /loginへ')
           setProfile(null)
           setLoading(false)
           router.replace('/login')
           return
         }
 
-        // SIGNED_IN / INITIAL_SESSION / TOKEN_REFRESHED すべてで取得
         if (session) {
+          console.log('★ usersテーブル取得開始')
           const { data, error } = await supabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
             .single()
 
+          console.log('★ usersテーブル結果 data:', data, 'error:', error)
+
           if (error || !data) {
-            // usersテーブルにレコードがない場合もログインへ
+            console.log('★ プロフィールなし → /loginへ')
             setLoading(false)
             router.replace('/login')
             return
           }
 
+          console.log('★ プロフィール取得成功 → 画面表示')
           setProfile(data)
           setLoading(false)
         }
@@ -57,9 +61,7 @@ export default function AuthGuard({ children }) {
     )
   }
 
-  if (!profile) {
-    return null
-  }
+  if (!profile) return null
 
   return typeof children === 'function' ? children(profile) : children
 }
