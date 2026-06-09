@@ -9,45 +9,38 @@ export default function AuthGuard({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // プロフィール取得を関数として切り出す（イベント検知時にも使い回す）
-    const fetchProfile = async (session) => {
-      if (!session) {
-        router.replace('/login')
-        return
-      }
-      const { data } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', session.user.id)
-        .single()
-      if (!data) {
-        router.replace('/login')
-        return
-      }
-      setProfile(data)
-      setLoading(false)
-    }
+    // onAuthStateChange だけに一本化する
+    // （initializeとの競合を完全になくす）
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
 
-    // 最初の確認
-    const initialize = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      await fetchProfile(session)
-    }
-    initialize()
+        if (event === 'SIGNED_OUT' || !session) {
+          setProfile(null)
+          setLoading(false)
+          router.replace('/login')
+          return
+        }
 
-    // ↓ここが今回の修正の核心
-    // 認証状態の変化を監視する（ログイン・ログアウト両方に対応）
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN') {
-        // ログイン成功を検知したらプロフィールを取得する
-        await fetchProfile(session)
+        // SIGNED_IN / INITIAL_SESSION / TOKEN_REFRESHED すべてで取得
+        if (session) {
+          const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+
+          if (error || !data) {
+            // usersテーブルにレコードがない場合もログインへ
+            setLoading(false)
+            router.replace('/login')
+            return
+          }
+
+          setProfile(data)
+          setLoading(false)
+        }
       }
-      if (event === 'SIGNED_OUT') {
-        setProfile(null)
-        setLoading(true)
-        router.replace('/login')
-      }
-    })
+    )
 
     return () => listener.subscription.unsubscribe()
   }, [router])
@@ -62,6 +55,10 @@ export default function AuthGuard({ children }) {
         読み込み中...
       </div>
     )
+  }
+
+  if (!profile) {
+    return null
   }
 
   return typeof children === 'function' ? children(profile) : children
