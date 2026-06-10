@@ -27,7 +27,8 @@ function CasesContent({ me }) {
     setLoading(true)
     let q = supabase
       .from('cases')
-      .select('id,deceased_name,doc_date,status,assigned_to,created_at,updated_at')
+      // ✅ 修正①：case_noを追加
+      .select('id,case_no,deceased_name,doc_date,status,assigned_to,created_at,updated_at')
       .order('updated_at', { ascending: false })
       .limit(200)
     if (statusF) q = q.eq('status', statusF)
@@ -207,7 +208,8 @@ function CasesContent({ me }) {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: '#f5f4f0' }}>
-                    {['被相続人', 'ステータス', '担当者', '作成日', '更新日', ''].map(h => (
+                    {/* ✅ 修正②：案件番号の列を追加 */}
+                    {['案件番号', '被相続人', 'ステータス', '担当者', '作成日', '更新日', ''].map(h => (
                       <th key={h} style={{
                         padding: '10px 14px', textAlign: 'left', fontWeight: 500,
                         fontSize: 12, color: '#5a5a56', borderBottom: '.5px solid rgba(0,0,0,.15)',
@@ -223,6 +225,10 @@ function CasesContent({ me }) {
                       <tr key={c.id}
                         onClick={() => window.location.href = `/cases/${c.id}`}
                         style={{ borderBottom: '.5px solid rgba(0,0,0,.08)', cursor: 'pointer' }}>
+                        {/* ✅ 修正②：案件番号のセルを追加 */}
+                        <td style={{ padding: '12px 14px', color: '#9a9a94', whiteSpace: 'nowrap', fontSize: 12 }}>
+                          {c.case_no || '-'}
+                        </td>
                         <td style={{ padding: '12px 14px', fontWeight: 500 }}>
                           {c.deceased_name || '-'}
                         </td>
