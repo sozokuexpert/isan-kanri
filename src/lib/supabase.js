@@ -1,13 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'placeholder'
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-// ↑ throw new Error(...) を削除し、|| 'placeholder' に変更
-// 理由：Vercelのビルド時にサーバー側でこのファイルが読み込まれる際、
-//       環境変数が一瞬未設定になりビルドが止まってしまうため
-
-export const supabase = createClient(supabaseUrl, supabaseKey)
+// ビルド時（Vercel環境変数が未設定の静的解析フェーズ）でも
+// createClient が実行されないよう、有効なURLがある場合のみ初期化する。
+// 実際のユーザー操作時はVercelに環境変数が設定されているため問題なし。
+export const supabase = (supabaseUrl && supabaseKey)
+  ? createClient(supabaseUrl, supabaseKey)
+  : null
 
 /* ステータスの定義（色・ラベル） */
 export const STATUS_LIST = [
