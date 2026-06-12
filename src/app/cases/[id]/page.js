@@ -32,10 +32,12 @@ function CaseDetail({ id, me }) {
     const load = async () => {
       setLoading(true)
 
-      /* 案件本体 */
+      /* 案件本体（customersテーブルも一緒に取得） */
       const { data, error } = await supabase
-        .from('cases').select('*').eq('id', id).single()
-
+        .from('cases')
+        .select('*, customers(customer_no, name, email, phone)')
+        .eq('id', id).single()
+      
       /* ファイル一覧 */
       const { data: fileRows } = await supabase
         .from('case_files')
@@ -160,7 +162,7 @@ function CaseDetail({ id, me }) {
       <NavBar me={me} onLogout={handleLogout} />
       <div className="page">
 
-        {/* ページヘッダー */}
+       {/* ページヘッダー */}
         <div className="page-header">
           <div>
             <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:4 }}>
@@ -171,13 +173,34 @@ function CaseDetail({ id, me }) {
                 {caseData.status}
               </span>
             </div>
+            <div className="page-subtitle" style={{ display:'flex', flexWrap:'wrap', gap:6, alignItems:'center', marginBottom:4 }}>
+              <span style={{
+                fontFamily:'monospace', fontWeight:600,
+                background:'var(--bg2)', border:'.5px solid var(--border)',
+                borderRadius:4, padding:'1px 6px', fontSize:12
+              }}>
+                案件番号: {caseData.case_no || '未採番'}
+              </span>
+              <span style={{
+                fontFamily:'monospace', fontWeight:600,
+                background:'var(--bg2)', border:'.5px solid var(--border)',
+                borderRadius:4, padding:'1px 6px', fontSize:12,
+                color: caseData.customers ? 'inherit' : 'var(--text3)'
+              }}>
+                顧客番号: {caseData.customers?.customer_no || '未紐付け'}
+              </span>
+              {caseData.customers && (
+                <span style={{ fontSize:12, color:'var(--text2)' }}>
+                  （相談者: {caseData.customers.name}）
+                </span>
+              )}
+            </div>
             <div className="page-subtitle">
               作成日: {fmtDate(caseData.created_at)}　
               更新日: {fmtDate(caseData.updated_at)}　
               担当: {caseData.assigned_to || '-'}
             </div>
-          </div>
-          <div style={{ display:'flex', gap:8 }}>
+          </div>          <div style={{ display:'flex', gap:8 }}>
             <button className="btn btn-primary" onClick={() => setEditing(true)}>
               ✏ 編集
             </button>
